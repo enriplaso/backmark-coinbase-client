@@ -1,0 +1,22 @@
+{
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": false,
+    "[json]": {
+        "editor.formatOnSave": true
+    },
+    "[javascript]": {
+        "editor.formatOnSave": true
+    },
+    "[typescript]": {
+        "editor.formatOnSave": true
+    },
+    "cSpell.words": [
+        "previus"
+    ],
+    "chatgpt.promptPrefix.customPrompt1-enabled": true,
+    "chatgpt.promptPrefix.customPrompt2-enabled": true
+
+}
+
+//
