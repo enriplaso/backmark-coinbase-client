@@ -1,35 +1,48 @@
-import { CoinbaseError } from './error';
-import { generateToken } from './jwtAuthentication';
+import { Account, IExchangeClient, Order, TimeInForce, Trade } from 'backmark-common-types';
+import { CoinbaseHttpClient } from './httpClient';
+import { transformCoinbaseOrderToOrder } from './transformer';
 
-export function coinbaseClientFactory(apiKey: string, apiSecret: string, domain: string, userAgent: string) {
-    return async (path: string, httpMethod: string, body: Record<string, unknown>): Promise<string> => {
-        const url = `https://${domain}${path}`;
-        const authToken = generateToken(apiKey, apiSecret, url);
+const API_PREFIX = '/api/v3/brokerage';
 
-        const requestOptions: RequestInit = {
-            method: httpMethod,
-            headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': userAgent,
-                Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify(body),
-        };
+export class CoinbaseClient implements IExchangeClient {
+    constructor(
+        private httpClient: CoinbaseHttpClient,
+        private productId: string,
+    ) {}
+    public async marketBuyOrder(funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+        const body = { product_id: this.productId, client_order_id: crypto.randomUUID() };
 
-        const response: Response = await fetch(url, requestOptions);
-        const responseText = await response.text();
-        if (response.ok) {
-            return responseText;
-        }
-
-        let message = `${response.status} Coinbase Error: ${response.statusText} ${responseText}`;
-
-        if (response.status == 403 && responseText.includes('"error_details":"Missing required scopes"')) {
-            message = `${response.status} Coinbase Error: Missing Required Scopes. Please verify your API keys include the necessary permissions.`;
-        }
-
-        throw new CoinbaseError(message, response.status, response);
-    };
+        const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
+        return transformCoinbaseOrderToOrder(response);
+    }
+    marketSellOrder(size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+        throw new Error('Method not implemented.');
+    }
+    limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+        throw new Error('Method not implemented.');
+    }
+    limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+        throw new Error('Method not implemented.');
+    }
+    stopLossOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+        throw new Error('Method not implemented.');
+    }
+    stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+        throw new Error('Method not implemented.');
+    }
+    cancelOrder(id: string): void {
+        throw new Error('Method not implemented.');
+    }
+    getAllOrders(): Order[] {
+        throw new Error('Method not implemented.');
+    }
+    getAllTrades(): Trade[] {
+        throw new Error('Method not implemented.');
+    }
+    cancelAllOrders(): void {
+        throw new Error('Method not implemented.');
+    }
+    getAccount(): Account {
+        throw new Error('Method not implemented.');
+    }
 }
-
-export type CoinbaseClient = (path: string, httpMethod: string, body: string) => Promise<string>;
