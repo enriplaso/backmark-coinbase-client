@@ -1,6 +1,8 @@
 import { Account, IExchangeClient, Order, TimeInForce, Trade } from 'backmark-common-types';
 import { CoinbaseHttpClient } from './httpClient';
 import { transformCoinbaseOrderToOrder } from './transformer';
+import { CreateOrderRequest } from './types/coinbaseTypes';
+import { OrderSide } from './types/coinbaseCommonTypes';
 
 const API_PREFIX = '/api/v3/brokerage';
 
@@ -9,13 +11,26 @@ export class CoinbaseClient implements IExchangeClient {
         private httpClient: CoinbaseHttpClient,
         private productId: string,
     ) {}
-    public async marketBuyOrder(funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
-        const body = { product_id: this.productId, client_order_id: crypto.randomUUID() };
+    public async marketBuyOrder(funds: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
+        if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
+            console.warn('Coinbase only accept Market IOC orders');
+        }
+
+        const body: CreateOrderRequest = {
+            productId: this.productId,
+            clientOrderId: crypto.randomUUID(),
+            side: OrderSide.BUY,
+            orderConfiguration: { market_market_ioc: { quote_size: funds.toString() } },
+        };
 
         const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
         return transformCoinbaseOrderToOrder(response);
     }
-    marketSellOrder(size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Order {
+        if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
+            console.warn('Coinbase only accept Market IOC orders');
+        }
+
         throw new Error('Method not implemented.');
     }
     limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
