@@ -31,12 +31,23 @@ export class CoinbaseClient implements IExchangeClient {
         }
         return transformCoinbaseOrderToOrder(response, body);
     }
-    marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
+    public async marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
         if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
             console.warn('Coinbase only accept Market IOC orders');
         }
+        const body: CreateOrderRequest = {
+            productId: this.productId,
+            clientOrderId: crypto.randomUUID(),
+            side: OrderSide.SELL,
+            orderConfiguration: { market_market_ioc: { base_size: size.toString() } },
+        };
 
-        throw new Error('Method not implemented.');
+        const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
+
+        if (!isPreviewOrderResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+        return transformCoinbaseOrderToOrder(response, body);
     }
     limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
@@ -50,8 +61,8 @@ export class CoinbaseClient implements IExchangeClient {
     stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
     }
-    public async cancelOrder(id: string): Promise<void> {
-        return;
+    async cancelOrder(id: string): Promise<void> {
+        await this.httpClient(`${API_PREFIX}/orders/batch_cancel`, 'POST', { order_ids: [id] });
     }
     getAllOrders(): Order[] {
         throw new Error('Method not implemented.');
@@ -59,7 +70,7 @@ export class CoinbaseClient implements IExchangeClient {
     getAllTrades(): Trade[] {
         throw new Error('Method not implemented.');
     }
-    cancelAllOrders(): void {
+    cancelAllOrders(): Promise<void> {
         throw new Error('Method not implemented.');
     }
     getAccount(): Account {
