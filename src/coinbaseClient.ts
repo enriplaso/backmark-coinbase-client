@@ -3,6 +3,7 @@ import { CoinbaseHttpClient } from './httpClient';
 import { transformCoinbaseOrderToOrder } from './transformer';
 import { CreateOrderRequest } from './types/coinbaseTypes';
 import { OrderSide } from './types/coinbaseCommonTypes';
+import { isPreviewOrderResponse } from './typePredicates';
 
 const API_PREFIX = '/api/v3/brokerage';
 
@@ -24,29 +25,33 @@ export class CoinbaseClient implements IExchangeClient {
         };
 
         const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
-        return transformCoinbaseOrderToOrder(response);
+
+        if (!isPreviewOrderResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+        return transformCoinbaseOrderToOrder(response, body);
     }
-    marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Order {
+    marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
         if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
             console.warn('Coinbase only accept Market IOC orders');
         }
 
         throw new Error('Method not implemented.');
     }
-    limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
     }
-    limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
     }
-    stopLossOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    stopLossOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
     }
-    stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
     }
-    cancelOrder(id: string): void {
-        throw new Error('Method not implemented.');
+    public async cancelOrder(id: string): Promise<void> {
+        return;
     }
     getAllOrders(): Order[] {
         throw new Error('Method not implemented.');

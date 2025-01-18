@@ -34,7 +34,7 @@
     "@typescript-eslint/parser": "^7.1.0",
     "@types/jsonwebtoken": "9.0.6",
     "backmark": "^1.0.2",
-    "backmark-common-types": "^1.0.1",
+    "backmark-common-types": "^1.0.3",
     "c8": "^10.1.2",
     "chai": "^5.1.0",
     "eslint": "^8.0.1",
