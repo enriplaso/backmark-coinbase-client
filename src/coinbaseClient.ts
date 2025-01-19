@@ -1,6 +1,6 @@
 import { Account, IExchangeClient, Order, TimeInForce, Trade } from 'backmark-common-types';
 import { CoinbaseHttpClient } from './httpClient';
-import { transformCoinbaseOrderToOrder } from './transformer';
+import { getLimitOrdersCoinbaseConf, transformCoinbaseOrderToOrder } from './transformer';
 import { CreateOrderRequest } from './types/coinbaseTypes';
 import { OrderSide } from './types/coinbaseCommonTypes';
 import { isPreviewOrderResponse } from './typePredicates';
@@ -14,7 +14,7 @@ export class CoinbaseClient implements IExchangeClient {
     ) {}
     public async marketBuyOrder(funds: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
         if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
-            console.warn('Coinbase only accept Market IOC orders');
+            console.warn('Coinbase only accepts Market IOC orders');
         }
 
         const body: CreateOrderRequest = {
@@ -29,11 +29,11 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body);
+        return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
     public async marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
         if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
-            console.warn('Coinbase only accept Market IOC orders');
+            console.warn('Coinbase only accepts Market IOC orders');
         }
         const body: CreateOrderRequest = {
             productId: this.productId,
@@ -47,16 +47,52 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body);
+        return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
-    limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
-        throw new Error('Method not implemented.');
+    public async limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
+        const body: CreateOrderRequest = {
+            productId: this.productId,
+            clientOrderId: crypto.randomUUID(),
+            side: OrderSide.BUY,
+            orderConfiguration: getLimitOrdersCoinbaseConf(price, funds, timeInForce, cancelAfter),
+        };
+
+        const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
+
+        if (!isPreviewOrderResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+        return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
-    limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
-        throw new Error('Method not implemented.');
+    public async limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
+        const body: CreateOrderRequest = {
+            productId: this.productId,
+            clientOrderId: crypto.randomUUID(),
+            side: OrderSide.SELL,
+            orderConfiguration: getLimitOrdersCoinbaseConf(price, quantity, timeInForce, cancelAfter),
+        };
+
+        const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
+
+        if (!isPreviewOrderResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+        return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
-    stopLossOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
-        throw new Error('Method not implemented.');
+    public async stopLossOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
+        const body: CreateOrderRequest = {
+            productId: this.productId,
+            clientOrderId: crypto.randomUUID(),
+            side: OrderSide.SELL,
+            orderConfiguration: {}, //TODO
+        };
+
+        const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
+
+        if (!isPreviewOrderResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+        return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
     stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         throw new Error('Method not implemented.');
