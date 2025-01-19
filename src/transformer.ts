@@ -1,6 +1,6 @@
 import { Order, OrderStatus, OrderType, Side, TimeInForce } from 'backmark-common-types';
 import { CreateOrderRequest, PreviewOrderResponse } from './types/coinbaseTypes';
-import { OrderConfiguration, OrderSide } from './types/coinbaseCommonTypes';
+import { OrderConfiguration, OrderSide, StopDirection } from './types/coinbaseCommonTypes';
 
 export function transformCoinbaseOrderToOrder(
     coinbaseOrder: PreviewOrderResponse,
@@ -42,4 +42,40 @@ export function getLimitOrdersCoinbaseConf(price: number, size: number, timeInFo
         default:
             return { limit_limit_gtc: { baseSize: size.toString(), limitPrice: price.toString(), postOnly: true } };
     }
+}
+
+export function getStopOrdersCoinbaseConf(
+    price: number,
+    size: number,
+    direction: StopDirection,
+    timeInForce?: TimeInForce,
+    cancelAfter?: Date,
+): OrderConfiguration {
+    if (timeInForce === TimeInForce.FILL_OR_KILL || timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
+        throw new Error('FOK and IOC time in force is not allowed in Coinbase for Stop loss ordes');
+    }
+    if (timeInForce === TimeInForce.GOOD_TILL_CANCEL) {
+        return {
+            stop_limit_stop_limit_gtc: {
+                baseSize: size.toString(),
+                limitPrice: (price - price * 0.5).toString(),
+                stopPrice: price.toString(),
+                stopDirection: direction,
+            },
+        };
+    }
+
+    if (cancelAfter === undefined) {
+        throw new Error('cancelAfter cannot be undefined');
+    }
+
+    return {
+        stop_limit_stop_limit_gtd: {
+            baseSize: size.toString(),
+            limitPrice: (price - price * 0.5).toString(),
+            stopDirection: direction,
+            stopPrice: price.toString(),
+            endTime: cancelAfter.getTime().toString(),
+        },
+    };
 }

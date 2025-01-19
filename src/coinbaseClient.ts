@@ -1,8 +1,8 @@
 import { Account, IExchangeClient, Order, TimeInForce, Trade } from 'backmark-common-types';
 import { CoinbaseHttpClient } from './httpClient';
-import { getLimitOrdersCoinbaseConf, transformCoinbaseOrderToOrder } from './transformer';
+import { getLimitOrdersCoinbaseConf, getStopOrdersCoinbaseConf, transformCoinbaseOrderToOrder } from './transformer';
 import { CreateOrderRequest } from './types/coinbaseTypes';
-import { OrderSide } from './types/coinbaseCommonTypes';
+import { OrderSide, StopDirection } from './types/coinbaseCommonTypes';
 import { isPreviewOrderResponse } from './typePredicates';
 
 const API_PREFIX = '/api/v3/brokerage';
@@ -84,7 +84,7 @@ export class CoinbaseClient implements IExchangeClient {
             productId: this.productId,
             clientOrderId: crypto.randomUUID(),
             side: OrderSide.SELL,
-            orderConfiguration: {}, //TODO
+            orderConfiguration: getStopOrdersCoinbaseConf(price, size, StopDirection.DOWN, timeInForce, cancelAfter), //TODO
         };
 
         const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
@@ -94,9 +94,22 @@ export class CoinbaseClient implements IExchangeClient {
         }
         return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
-    stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
-        throw new Error('Method not implemented.');
+    public async stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
+        const body: CreateOrderRequest = {
+            productId: this.productId,
+            clientOrderId: crypto.randomUUID(),
+            side: OrderSide.SELL,
+            orderConfiguration: getStopOrdersCoinbaseConf(price, size, StopDirection.UP, timeInForce, cancelAfter), //TODO
+        };
+
+        const response = await this.httpClient(`${API_PREFIX}/orders`, 'POST', body);
+
+        if (!isPreviewOrderResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+        return transformCoinbaseOrderToOrder(response, body, timeInForce);
     }
+
     async cancelOrder(id: string): Promise<void> {
         await this.httpClient(`${API_PREFIX}/orders/batch_cancel`, 'POST', { order_ids: [id] });
     }
@@ -104,6 +117,7 @@ export class CoinbaseClient implements IExchangeClient {
         throw new Error('Method not implemented.');
     }
     getAllTrades(): Trade[] {
+        // https://api.coinbase.com/api/v3/brokerage/orders/historical/fills
         throw new Error('Method not implemented.');
     }
     cancelAllOrders(): Promise<void> {
