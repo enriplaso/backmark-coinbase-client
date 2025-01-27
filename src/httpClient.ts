@@ -2,7 +2,7 @@ import { CoinbaseError } from './error';
 import { generateToken } from './jwtAuthentication';
 
 export function coinbaseHttpClientFactory(apiKey: string, apiSecret: string, domain: string, userAgent: string) {
-    return async (path: string, httpMethod: string, body: Record<string, unknown>): Promise<unknown> => {
+    return async (path: string, httpMethod: string, body?: Record<string, unknown>): Promise<unknown> => {
         const url = `https://${domain}${path}`;
         const authToken = generateToken(apiKey, apiSecret, url);
 
@@ -13,7 +13,7 @@ export function coinbaseHttpClientFactory(apiKey: string, apiSecret: string, dom
                 'User-Agent': userAgent,
                 Authorization: `Bearer ${authToken}`,
             },
-            body: JSON.stringify(body),
+            body: body === undefined ? undefined : JSON.stringify(body),
         };
 
         const response: Response = await fetch(url, requestOptions);
@@ -32,4 +32,4 @@ export function coinbaseHttpClientFactory(apiKey: string, apiSecret: string, dom
     };
 }
 
-export type CoinbaseHttpClient = (path: string, httpMethod: string, body: Record<string, unknown>) => Promise<unknown>;
+export type CoinbaseHttpClient = (path: string, httpMethod: string, body?: Record<string, unknown>) => Promise<unknown>;

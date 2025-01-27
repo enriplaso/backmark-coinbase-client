@@ -1,9 +1,12 @@
-import { PreviewOrderResponse } from './types/coinbaseTypes';
+import { ListOrdersResponse, PreviewOrderResponse } from './types/coinbaseTypes';
+
+export function isObject(obj: unknown): obj is object {
+    return obj !== null && typeof obj === 'object' && obj !== undefined;
+}
 
 export function isPreviewOrderResponse(obj: unknown): obj is PreviewOrderResponse {
     return (
-        obj !== null &&
-        typeof obj === 'object' &&
+        isObject(obj) &&
         'order_total' in obj &&
         typeof obj.order_total === 'string' &&
         'commission_total' in obj &&
@@ -35,4 +38,8 @@ export function isPreviewOrderResponse(obj: unknown): obj is PreviewOrderRespons
         (!('max_leverage' in obj) || typeof obj.max_leverage === 'string') &&
         (!('pnl_configuration' in obj) || typeof obj.pnl_configuration === 'object')
     );
+}
+
+export function isListOrdersResponse(obj: unknown): obj is ListOrdersResponse {
+    return isObject(obj) && 'orders' in obj && Array.isArray(obj.orders) && 'has_next' in obj && typeof obj.has_next === 'boolean';
 }

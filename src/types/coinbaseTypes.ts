@@ -1,4 +1,4 @@
-import { MarginType, OrderConfiguration, OrderSide } from './coinbaseCommonTypes';
+import { MarginType, Order, OrderConfiguration, OrderSide } from './coinbaseCommonTypes';
 
 // Create Order
 export type CreateOrderRequest = {
@@ -33,4 +33,11 @@ export type PreviewOrderResponse = {
     projected_liquidation_buffer?: string;
     max_leverage?: string;
     pnl_configuration?: Record<string, unknown>;
+};
+
+export type ListOrdersResponse = {
+    orders: Order[];
+    sequence?: number; // deprecated
+    has_next: boolean;
+    cursor?: string;
 };

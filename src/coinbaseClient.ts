@@ -1,9 +1,14 @@
 import { Account, IExchangeClient, Order, TimeInForce, Trade } from 'backmark-common-types';
 import { CoinbaseHttpClient } from './httpClient';
-import { getLimitOrdersCoinbaseConf, getStopOrdersCoinbaseConf, transformCoinbaseOrderToOrder } from './transformer';
+import {
+    getLimitOrdersCoinbaseConf,
+    getStopOrdersCoinbaseConf,
+    transformCoinbaseOrderToOrder,
+    transformCoinbasePreviewOrderResponseToOrder,
+} from './transformer';
 import { CreateOrderRequest } from './types/coinbaseTypes';
 import { OrderSide, StopDirection } from './types/coinbaseCommonTypes';
-import { isPreviewOrderResponse } from './typePredicates';
+import { isListOrdersResponse, isPreviewOrderResponse } from './typePredicates';
 
 const API_PREFIX = '/api/v3/brokerage';
 
@@ -29,7 +34,7 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body, timeInForce);
+        return transformCoinbasePreviewOrderResponseToOrder(response, body, timeInForce);
     }
     public async marketSellOrder(size: number, timeInForce = TimeInForce.INMEDIATE_OR_CANCELL): Promise<Order> {
         if (timeInForce !== TimeInForce.INMEDIATE_OR_CANCELL) {
@@ -47,7 +52,7 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body, timeInForce);
+        return transformCoinbasePreviewOrderResponseToOrder(response, body, timeInForce);
     }
     public async limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         const body: CreateOrderRequest = {
@@ -62,7 +67,7 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body, timeInForce);
+        return transformCoinbasePreviewOrderResponseToOrder(response, body, timeInForce);
     }
     public async limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         const body: CreateOrderRequest = {
@@ -77,7 +82,7 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body, timeInForce);
+        return transformCoinbasePreviewOrderResponseToOrder(response, body, timeInForce);
     }
     public async stopLossOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         const body: CreateOrderRequest = {
@@ -92,7 +97,7 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body, timeInForce);
+        return transformCoinbasePreviewOrderResponseToOrder(response, body, timeInForce);
     }
     public async stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         const body: CreateOrderRequest = {
@@ -107,14 +112,22 @@ export class CoinbaseClient implements IExchangeClient {
         if (!isPreviewOrderResponse(response)) {
             throw new Error('Unexpected response type from Coinbase API');
         }
-        return transformCoinbaseOrderToOrder(response, body, timeInForce);
+        return transformCoinbasePreviewOrderResponseToOrder(response, body, timeInForce);
     }
 
     async cancelOrder(id: string): Promise<void> {
         await this.httpClient(`${API_PREFIX}/orders/batch_cancel`, 'POST', { order_ids: [id] });
     }
-    getAllOrders(): Order[] {
-        throw new Error('Method not implemented.');
+    public async getAllOrders(): Promise<Order[]> {
+        const response = await this.httpClient(
+            `${API_PREFIX}/orders/historical/batch?order_status=OPEN&product_ids=${this.productId}`,
+            'GET',
+        );
+        if (!isListOrdersResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+
+        return response.orders.map((order) => transformCoinbaseOrderToOrder(order));
     }
     getAllTrades(): Trade[] {
         // https://api.coinbase.com/api/v3/brokerage/orders/historical/fills

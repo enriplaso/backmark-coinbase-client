@@ -1,8 +1,14 @@
 import { Order, OrderStatus, OrderType, Side, TimeInForce } from 'backmark-common-types';
 import { CreateOrderRequest, PreviewOrderResponse } from './types/coinbaseTypes';
-import { OrderConfiguration, OrderSide, StopDirection } from './types/coinbaseCommonTypes';
+import {
+    OrderConfiguration,
+    OrderSide,
+    StopDirection,
+    Order as CoinbaseOrder,
+    TimeInForce as CoinbaseTimeInForce,
+} from './types/coinbaseCommonTypes';
 
-export function transformCoinbaseOrderToOrder(
+export function transformCoinbasePreviewOrderResponseToOrder(
     coinbaseOrder: PreviewOrderResponse,
     requestOrder: CreateOrderRequest,
     timeInForce?: TimeInForce,
@@ -18,6 +24,37 @@ export function transformCoinbaseOrderToOrder(
         price: 3, //TODO fix missing parameters
         funds: Number(coinbaseOrder.quote_size),
         fillFees: Number(coinbaseOrder.commission_total),
+    } as Order;
+}
+
+export function transformCoinbaseOrderToOrder(coinbaseOrder: CoinbaseOrder): Order {
+    let timeInForce = TimeInForce.GOOD_TILL_CANCEL;
+
+    switch (coinbaseOrder.time_in_force) {
+        case CoinbaseTimeInForce.FILL_OR_KILL:
+            timeInForce = TimeInForce.FILL_OR_KILL;
+            break;
+        case CoinbaseTimeInForce.GOOD_UNTIL_CANCELLED:
+            timeInForce = TimeInForce.GOOD_TILL_CANCEL;
+            break;
+        case CoinbaseTimeInForce.GOOD_UNTIL_DATE_TIME:
+            timeInForce = TimeInForce.GOOD_TILL_TIME;
+            break;
+        case CoinbaseTimeInForce.IMMEDIATE_OR_CANCEL:
+            timeInForce = TimeInForce.INMEDIATE_OR_CANCELL;
+            break;
+    }
+    return {
+        id: coinbaseOrder.order_id,
+        type: 'market_market_ioc' in coinbaseOrder.order_configuration ? OrderType.MARKET : OrderType.LIMIT,
+        side: coinbaseOrder.side === OrderSide.BUY ? Side.BUY : Side.SELL, // TODO: simplify types
+        status: OrderStatus.ACTIVE,
+        timeInForce,
+        quantity: Number(coinbaseOrder.filled_size),
+        createdAt: new Date(),
+        price: Number(coinbaseOrder.average_filled_price), //TODO fix missing parameters
+        funds: Number(coinbaseOrder.total_value_after_fees),
+        fillFees: Number(coinbaseOrder.total_fees),
     } as Order;
 }
 

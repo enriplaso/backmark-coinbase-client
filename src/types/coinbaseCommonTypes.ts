@@ -77,6 +77,14 @@ export enum IntradayMarginSetting {
     INTRADAY = 'INTRADAY_MARGIN_SETTING_INTRADAY',
 }
 
+export enum TimeInForce {
+    UNKNOWN_TIME_IN_FORCE = 'UNKNOWN_TIME_IN_FORCE',
+    GOOD_UNTIL_DATE_TIME = 'GOOD_UNTIL_DATE_TIME',
+    GOOD_UNTIL_CANCELLED = 'GOOD_UNTIL_CANCELLED',
+    IMMEDIATE_OR_CANCEL = 'IMMEDIATE_OR_CANCEL',
+    FILL_OR_KILL = 'FILL_OR_KILL',
+}
+
 // ----- TYPES -----
 export type Account = {
     uuid?: string;
@@ -239,7 +247,7 @@ export type Order = {
     side: OrderSide;
     client_order_id: string;
     status: Record<string, unknown>;
-    time_in_force?: Record<string, unknown>;
+    time_in_force?: TimeInForce;
     created_time: Record<string, unknown>;
     completion_percentage: string;
     filled_size?: string;
