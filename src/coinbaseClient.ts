@@ -143,8 +143,26 @@ export class CoinbaseClient implements IExchangeClient {
         return response.fills.map((fill): Trade => transformFillToTrade(fill));
     }
 
-    cancelAllOrders(): Promise<void> {
-        throw new Error('Method not implemented.');
+    public async cancelAllOrders(): Promise<void> {
+        const BATCH_SIZE = 100;
+        const openOrders = await this.getAllOrders();
+        const orderBatches = [];
+
+        const orderIds = openOrders.map((order) => order.id);
+
+        for (let i = 0; i < orderIds.length; i += BATCH_SIZE) {
+            orderBatches.push(orderIds.slice(i, i + BATCH_SIZE));
+        }
+
+        for (const batch of orderBatches) {
+            try {
+                await this.httpClient(`${API_PREFIX}/brokerage/orders/batch_cancel`, 'POST', { order_ids: batch });
+                console.log(`Successfully canceled batch of orders: ${batch.toString()}`);
+            } catch (error) {
+                console.error(`Failed to cancel batch of orders: ${batch.toString()}`);
+                throw error;
+            }
+        }
     }
     getAccount(): Account {
         throw new Error('Method not implemented.');
