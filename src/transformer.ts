@@ -1,4 +1,4 @@
-import { Order, OrderStatus, OrderType, Side, TimeInForce } from 'backmark-common-types';
+import { Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from 'backmark-common-types';
 import { CreateOrderRequest, PreviewOrderResponse } from './types/coinbaseTypes';
 import {
     OrderConfiguration,
@@ -6,6 +6,7 @@ import {
     StopDirection,
     Order as CoinbaseOrder,
     TimeInForce as CoinbaseTimeInForce,
+    Fill,
 } from './types/coinbaseCommonTypes';
 
 export function transformCoinbasePreviewOrderResponseToOrder(
@@ -114,5 +115,15 @@ export function getStopOrdersCoinbaseConf(
             stopPrice: price.toString(),
             endTime: cancelAfter.getTime().toString(),
         },
+    };
+}
+
+export function transformFillToTrade(fill: Fill): Trade {
+    return {
+        orderId: fill.order_id,
+        price: parseFloat(fill.price),
+        side: fill.side as Side,
+        quantity: parseFloat(fill.size),
+        createdAt: new Date(fill.trade_time),
     };
 }

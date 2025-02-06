@@ -5,10 +5,11 @@ import {
     getStopOrdersCoinbaseConf,
     transformCoinbaseOrderToOrder,
     transformCoinbasePreviewOrderResponseToOrder,
+    transformFillToTrade,
 } from './transformer';
 import { CreateOrderRequest } from './types/coinbaseTypes';
 import { OrderSide, StopDirection } from './types/coinbaseCommonTypes';
-import { isListOrdersResponse, isPreviewOrderResponse } from './typePredicates';
+import { isFillResponse, isListOrdersResponse, isPreviewOrderResponse } from './typePredicates';
 
 const API_PREFIX = '/api/v3/brokerage';
 
@@ -129,10 +130,19 @@ export class CoinbaseClient implements IExchangeClient {
 
         return response.orders.map((order) => transformCoinbaseOrderToOrder(order));
     }
-    getAllTrades(): Trade[] {
-        // https://api.coinbase.com/api/v3/brokerage/orders/historical/fills
-        throw new Error('Method not implemented.');
+    public async getAllTrades(limit = 500, startTimeStamp?: number, endTimeStamp?: number): Promise<Trade[]> {
+        const response = await this.httpClient(
+            `${API_PREFIX}/brokerage/orders/historical/fills?limit=${limit}&start_sequence_timestamp=${startTimeStamp}&end_sequence_timestamp=${endTimeStamp}`,
+            'GET',
+        );
+
+        if (!isFillResponse(response)) {
+            throw new Error('Unexpected response type from Coinbase API');
+        }
+
+        return response.fills.map((fill): Trade => transformFillToTrade(fill));
     }
+
     cancelAllOrders(): Promise<void> {
         throw new Error('Method not implemented.');
     }
