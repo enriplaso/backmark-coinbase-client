@@ -1,4 +1,4 @@
-import { Fill, FillResponse } from './types/coinbaseCommonTypes';
+import { Account, AccountBalance, Fill, FillResponse } from './types/coinbaseCommonTypes';
 import { ListOrdersResponse, PreviewOrderResponse } from './types/coinbaseTypes';
 
 export function isObject(obj: unknown): obj is object {
@@ -90,5 +90,28 @@ export function isFillResponse(response: unknown): response is FillResponse {
         Array.isArray(response.fills) &&
         response.fills.every(isFill) &&
         (!('cursor' in response) || typeof response.cursor === 'string')
+    );
+}
+
+export function isAccountBalance(obj: unknown): obj is AccountBalance {
+    return isObject(obj) && 'value' in obj && typeof obj.value === 'string' && 'currency' in obj && typeof obj.currency === 'string';
+}
+
+export function isAccount(obj: unknown): obj is Account {
+    return (
+        isObject(obj) &&
+        ('uuid' in obj ? typeof obj.uuid === 'string' : true) &&
+        ('name' in obj ? typeof obj.name === 'string' : true) &&
+        ('currency' in obj ? typeof obj.currency === 'string' : true) &&
+        ('available_balance' in obj ? isAccountBalance(obj.available_balance) : true) &&
+        ('default' in obj ? typeof obj.default === 'boolean' : true) &&
+        ('active' in obj ? typeof obj.active === 'boolean' : true) &&
+        ('created_at' in obj ? typeof obj.created_at === 'string' : true) &&
+        ('updated_at' in obj ? typeof obj.updated_at === 'string' : true) &&
+        ('deleted_at' in obj ? typeof obj.deleted_at === 'string' : true) &&
+        ('type' in obj ? typeof obj.type === 'object' && obj.type !== null : true) &&
+        ('ready' in obj ? typeof obj.ready === 'boolean' : true) &&
+        ('hold' in obj ? isAccountBalance(obj.hold) : true) &&
+        ('retail_portfolio_id' in obj ? typeof obj.retail_portfolio_id === 'string' : true)
     );
 }

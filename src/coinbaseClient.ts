@@ -1,6 +1,7 @@
 import { Account, IExchangeClient, Order, TimeInForce, Trade } from 'backmark-common-types';
 import { CoinbaseHttpClient } from './httpClient';
 import {
+    transformCoinbaseAccountToAccounts,
     getLimitOrdersCoinbaseConf,
     getStopOrdersCoinbaseConf,
     transformCoinbaseOrderToOrder,
@@ -9,7 +10,7 @@ import {
 } from './transformer';
 import { CreateOrderRequest } from './types/coinbaseTypes';
 import { OrderSide, StopDirection } from './types/coinbaseCommonTypes';
-import { isFillResponse, isListOrdersResponse, isPreviewOrderResponse } from './typePredicates';
+import { isAccount, isFillResponse, isListOrdersResponse, isPreviewOrderResponse } from './typePredicates';
 
 const API_PREFIX = '/api/v3/brokerage';
 
@@ -117,7 +118,9 @@ export class CoinbaseClient implements IExchangeClient {
     }
 
     async cancelOrder(id: string): Promise<void> {
-        await this.httpClient(`${API_PREFIX}/orders/batch_cancel`, 'POST', { order_ids: [id] });
+        const response = await this.httpClient(`${API_PREFIX}/orders/batch_cancel`, 'POST', { order_ids: [id] });
+        // TODO check the response and throw respective error https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
+        console.info(JSON.stringify(response));
     }
     public async getAllOrders(): Promise<Order[]> {
         const response = await this.httpClient(
@@ -164,7 +167,14 @@ export class CoinbaseClient implements IExchangeClient {
             }
         }
     }
-    getAccount(): Account {
-        throw new Error('Method not implemented.');
+    public async getAccount(): Promise<Account> {
+        // assume we have only a single account
+        const response = await this.httpClient(`${API_PREFIX}/brokerage/accounts`, 'GET');
+
+        if (!Array.isArray(response) || !isAccount(response[0])) {
+            throw new Error('Unexpected response type from Coinbase API, no account was found');
+        }
+
+        return transformCoinbaseAccountToAccounts(response[0]);
     }
 }

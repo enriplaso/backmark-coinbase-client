@@ -1,4 +1,4 @@
-import { Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from 'backmark-common-types';
+import { Account, Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from 'backmark-common-types';
 import { CreateOrderRequest, PreviewOrderResponse } from './types/coinbaseTypes';
 import {
     OrderConfiguration,
@@ -6,6 +6,7 @@ import {
     StopDirection,
     Order as CoinbaseOrder,
     TimeInForce as CoinbaseTimeInForce,
+    Account as CoinbaseAccount,
     Fill,
 } from './types/coinbaseCommonTypes';
 
@@ -125,5 +126,16 @@ export function transformFillToTrade(fill: Fill): Trade {
         side: fill.side as Side,
         quantity: parseFloat(fill.size),
         createdAt: new Date(fill.trade_time),
+    };
+}
+
+export function transformCoinbaseAccountToAccounts(account: CoinbaseAccount): Account {
+    return {
+        id: account.uuid ?? '',
+        balance: parseFloat(account.available_balance?.value ?? '0'), // TODO: this should be the USDT available
+        available: parseFloat(account.hold?.value ?? '0'),
+        currency: account.currency ?? '',
+        productQuantity: 0, //TODO: this is the current product available amount, eg BTC USDT
+        fee: 0.0, // Default fee (if not provided in Account)
     };
 }

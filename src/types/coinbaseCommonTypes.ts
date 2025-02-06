@@ -86,11 +86,17 @@ export enum TimeInForce {
 }
 
 // ----- TYPES -----
+export type AccountBalance = {
+    value: string; // Amount of currency that this object represents
+    currency: string; // Denomination of the currency
+};
+
 export type Account = {
+    hold: AccountBalance;
     uuid?: string;
     name?: string;
     currency?: string;
-    available_balance?: Record<string, unknown>;
+    available_balance?: AccountBalance;
     default?: boolean;
     active?: boolean;
     created_at?: string;
@@ -98,7 +104,6 @@ export type Account = {
     deleted_at?: string;
     type?: Record<string, unknown>;
     ready?: boolean;
-    hold?: Record<string, unknown>;
     retail_portfolio_id?: string;
 };
 
