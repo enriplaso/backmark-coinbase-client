@@ -8,8 +8,7 @@ import {
     transformCoinbasePreviewOrderResponseToOrder,
     transformFillToTrade,
 } from './transformer';
-import { CreateOrderRequest } from './types/coinbaseTypes';
-import { OrderSide, StopDirection } from './types/coinbaseCommonTypes';
+import { OrderSide, StopDirection, CreateOrderRequest } from './types/coinbaseCommonTypes';
 import { isAccount, isFillResponse, isListOrdersResponse, isPreviewOrderResponse } from './typePredicates';
 
 const API_PREFIX = '/api/v3/brokerage';
@@ -119,7 +118,7 @@ export class CoinbaseClient implements IExchangeClient {
 
     async cancelOrder(id: string): Promise<void> {
         const response = await this.httpClient(`${API_PREFIX}/orders/batch_cancel`, 'POST', { order_ids: [id] });
-        // TODO check the response and throw respective error https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
+        //TODO: check the response and throw respective error https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
         console.info(JSON.stringify(response));
     }
     public async getAllOrders(): Promise<Order[]> {

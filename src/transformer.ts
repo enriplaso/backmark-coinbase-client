@@ -1,5 +1,4 @@
 import { Account, Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from 'backmark-common-types';
-import { CreateOrderRequest, PreviewOrderResponse } from './types/coinbaseTypes';
 import {
     OrderConfiguration,
     OrderSide,
@@ -8,6 +7,8 @@ import {
     TimeInForce as CoinbaseTimeInForce,
     Account as CoinbaseAccount,
     Fill,
+    CreateOrderRequest,
+    PreviewOrderResponse,
 } from './types/coinbaseCommonTypes';
 
 export function transformCoinbasePreviewOrderResponseToOrder(

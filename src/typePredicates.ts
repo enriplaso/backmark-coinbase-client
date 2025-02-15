@@ -1,5 +1,4 @@
-import { Account, AccountBalance, Fill, FillResponse } from './types/coinbaseCommonTypes';
-import { ListOrdersResponse, PreviewOrderResponse } from './types/coinbaseTypes';
+import { Account, AccountBalance, Fill, FillResponse, ListOrdersResponse, PreviewOrderResponse } from './types/coinbaseCommonTypes';
 
 export function isObject(obj: unknown): obj is object {
     return obj !== null && typeof obj === 'object' && obj !== undefined;
